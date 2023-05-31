@@ -1,0 +1,138 @@
+select distinct
+
+HEADER.segment1 as "Order",
+LINE.LINE_NUM as "Line Number",
+REPLACE(TRIM(line.item_description),CHR(10),' ')  as "Description",
+LINE_LOCATION.SHIPMENT_NUM as "Schedule Line Number",
+HEADER.DOCUMENT_STATUS as "Status",
+nvl((
+			SELECT max(hl.description)
+			FROM hr_locations_all_f_vl hl
+			WHERE 1 = 1
+				AND hl.location_id = pola.ship_to_location_id
+			), (
+			SELECT max(address1 || '' || city || ',' || STATE || ',' || postal_code)
+			FROM hz_locations hl
+			WHERE 1 = 1
+				AND hl.location_id = pola.ship_to_cust_location_id
+			)) as "Location",
+TO_CHAR(LINE_LOCATION.NEED_BY_DATE, 'YYYY/MM/DD') as "Requested Delivery Date",
+TO_CHAR(LINE_LOCATION.PROMISED_DATE, 'YYYY/MM/DD') as "Promised Delivery Date",
+HEADER.MODE_OF_TRANSPORT as "Shipping Method",
+LINE_LOCATION.SHIPPING_UOM_QUANTITY as "Quantity",
+LINE.SHIPPING_UOM_CODE as "UOM",
+LINE.UNIT_PRICE as "Price",
+LINE_LOCATION.ASSESSABLE_VALUE as "ORDERED",
+LINE_LOCATION.QUANTITY_RECEIVED as "RECEIVED QUANTITY",
+LINE_LOCATION.QUANTITY_BILLED as "Invoiced Quantity",
+'0' as "RECEIVED AMOUNT",
+'0' as "INVOICED AMOUNT",
+LINE_LOCATION.ALLOW_SUBSTITUTE_RECEIPTS_FLAG as "Allow substitute receipts",
+LINE_LOCATION.ACCRUE_ON_RECEIPT_FLAG as "Accrue at receipt",
+LINE_LOCATION.COUNTRY_OF_ORIGIN_CODE as "Country of Origin",
+SHIP_TO_LOCATION.LOCATION_CODE as "Deliver to location",
+LINE_LOCATION.DESTINATION_TYPE_CODE as "Destination Type",
+LINE_LOCATION.INVOICE_CLOSE_TOLERANCE as "Invoice Close Tolerance Percent",
+case LINE_LOCATION.MATCH_OPTION
+    when 'P' then 'Order'
+    when 'R' then 'Receipt'
+    else NULL
+end as "Invoice Match Option",
+EGP.ITEM_NUMBER as "ITEM",
+LINE.ITEM_REVISION as "REVISION",
+LINE_LOCATION.LAST_ACCEPT_DATE as "Last Acceptable Delivery Date",
+'3-Way' as "MATCH APPROVAL LEVEL",
+SHIP_TO_ORGANIZATION.ORGANIZATION_CODE as "organization", 
+LINE_LOCATION.QTY_RCV_TOLERANCE as "Overreceipt Tolerance Percent",
+COMBINATIONS.SEGMENT1 as "po_charge_account_SEGMENT1",
+COMBINATIONS.SEGMENT2 as "po_charge_account_SEGMENT2", 
+COMBINATIONS.SEGMENT3 as "po_charge_account_SEGMENT3", 
+COMBINATIONS.SEGMENT4 as "po_charge_account_SEGMENT4", 
+COMBINATIONS.SEGMENT5 as "po_charge_account_SEGMENT5", 
+COMBINATIONS.SEGMENT6 as "po_charge_account_SEGMENT6", 
+COMBINATIONS.SEGMENT7 as "po_charge_account_SEGMENT7", 
+COMBINATIONS.SEGMENT8 as "po_charge_account_SEGMENT8", 
+LINE_LOCATION.QTY_RCV_TOLERANCE as "Receipt Close Tolerance Percent",
+'NONE' as "Receipt Date Exception Action",
+LINE_LOCATION.DAYS_EARLY_RECEIPT_ALLOWED as "Early Receipt Tolerance in Days",
+LINE_LOCATION.DAYS_LATE_RECEIPT_ALLOWED as "Late Receipt Tolerance in Days",
+CASE LINE_LOCATION.RECEIVING_ROUTING_ID 
+        WHEN 1 THEN 'Standard Receipt'
+        WHEN 2 THEN 'Inspection Required'
+        WHEN 3 THEN 'Direct Delivery'
+        ELSE 'Unknown'
+    END AS "Receipt Routing",
+BUYER_NAME.FULL_NAME as "Requester",
+HEADER.GROUP_REQUISITIONS as "REQUISITIONS",
+LINE_LOCATION.SECONDARY_QUANTITY_RECEIVED as "Secondary Quantity",
+''as "Secondary UOM",
+DISTRIBUTION.DESTINATION_SUBINVENTORY as "Subinventory",
+LINE_LOCATION.NOTE_TO_RECEIVER  as "Note to receiver",
+DISTRIBUTION.PJC_PROJECT_ID as "Project Number",
+DISTRIBUTION.PJC_TASK_ID as "Task Number",
+DISTRIBUTION.PJC_EXPENDITURE_ITEM_DATE as "Expenditure Item Date",
+DISTRIBUTION.PJC_EXPENDITURE_TYPE_ID as "Expenditure Type",
+DISTRIBUTION.PJC_ORGANIZATION_ID as "Expenditure Organization",
+LINE.CONTRACT_ID as "Contract Number",
+'' as "Supplier Order Line",
+'' as "Original Promised Delivery Date",
+LINE.TAX_EXCLUSIVE_PRICE as "TOTAL TAX",
+LINE_LOCATION.ASSESSABLE_VALUE as "TOTAL",
+LINE_LOCATION.TRX_BUSINESS_CATEGORY as "Transaction Business Category",
+LINE_LOCATION.PRODUCT_TYPE as "Product Type",
+LINE_LOCATION.PRODUCT_CATEGORY as "Product Category",
+LINE_LOCATION.INPUT_TAX_CLASSIFICATION_CODE as "Tax Classification",
+LINE_LOCATION.ASSESSABLE_VALUE as "Assessable Value",
+LINE_LOCATION.FINAL_DISCHARGE_LOCATION_ID as "Location of Final Discharge"
+--EGP.MATCH_APPROVAL_LEVEL as "MATCH APPROVAL LEVEL",
+--LINE_LOCATION.RECEIPT_DAYS_EXCEPTION_CODE as " Receipt Date Exception Action",
+--SHIP_TO_ORGANIZATION.ORGANIZATION_CODE as "Ship-to Organization",
+--TO_CHAR(LINE_LOCATION.NEED_BY_DATE, 'YYYY/MM/DD') as "Need-by Date",
+--TO_CHAR(LINE_LOCATION.PROMISED_DATE, 'YYYY/MM/DD') as "Promised Date",
+--LINE_LOCATION.DESTINATION_TYPE_CODE as "Destination Type Code",
+--LINE_LOCATION.ENFORCE_SHIP_TO_LOCATION_CODE as "Enforce Ship to Location Code",
+--LINE_LOCATION.INSPECTION_REQUIRED_FLAG  as "Inspection Required",
+--LINE_LOCATION.RECEIPT_REQUIRED_FLAG as "Receipt Required",
+--LINE_LOCATION.QTY_RCV_EXCEPTION_CODE as "Qty Rcv Exception Code",
+--LINE_LOCATION.RECEIPT_DAYS_EXCEPTION_CODE as "Receipt Days Exception Code",
+
+from
+
+PO_LINE_LOCATIONS_ALL LINE_LOCATION 
+    LEFT JOIN PO_LINES_ALL LINE
+        ON LINE_LOCATION.PO_LINE_ID = LINE.PO_LINE_ID
+    left join PO_DISTRIBUTIONS_ALL DISTRIBUTION
+        ON LINE_LOCATION.LINE_LOCATION_ID = DISTRIBUTION.LINE_LOCATION_ID
+    left join PO_HEADERS_ALL HEADER
+        on LINE_LOCATION.PO_HEADER_ID = HEADER.PO_HEADER_ID
+    left join GL_CODE_COMBINATIONS COMBINATIONS
+        on DISTRIBUTION.CODE_COMBINATION_ID = COMBINATIONS.CODE_COMBINATION_ID
+    left join PO_DOCUMENT_TYPES_ALL_B DOCUMENT_TYPE
+        on HEADER.TYPE_LOOKUP_CODE = DOCUMENT_TYPE.DOCUMENT_SUBTYPE
+        and LINE_LOCATION.PRC_BU_ID = DOCUMENT_TYPE.PRC_BU_ID
+    left join HR_LOCATIONS_ALL SHIP_TO_LOCATION
+        on LINE_LOCATION.SHIP_TO_LOCATION_ID = SHIP_TO_LOCATION.LOCATION_ID
+    left join INV_ORG_PARAMETERS SHIP_TO_ORGANIZATION
+        on LINE_LOCATION.SHIP_TO_ORGANIZATION_ID = SHIP_TO_ORGANIZATION.ORGANIZATION_ID
+    LEFT JOIN egp_system_items EGP
+        on LINE.ITEM_ID = EGP.INVENTORY_ITEM_ID
+    -- left join RCV_ROUTING_HEADERS RECEIVING_ROUTE
+    --     on LINE_LOCATION.RECEIVING_ROUTING_ID = RECEIVING_ROUTE.SHIPMENT_HEADER_ID
+    -- left join HR_LOCATIONS_ALL FINAL_DISCHARGE_LOCATION
+    --     on LINE_LOCATION.FINAL_DISCHARGE_LOCATION_ID = SHIP_TO_LOCATION.LOCATION_ID
+    left join (
+        select distinct
+            PERSON_ID,
+            FULL_NAME
+        from
+            PER_PERSON_NAMES_F
+        where
+            NAME_TYPE = 'US'
+    ) BUYER_NAME
+        on DISTRIBUTION.DELIVER_TO_PERSON_ID = BUYER_NAME.PERSON_ID
+    left join po_line_locations_all pola
+        on LINE.po_line_id = pola.po_line_id
+where
+    HEADER.DOCUMENT_STATUS ='OPEN'
+    and LINE_LOCATION.ASSESSABLE_VALUE <> '0'
+

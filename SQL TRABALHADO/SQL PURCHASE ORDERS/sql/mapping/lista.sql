@@ -1,0 +1,87 @@
+----requ
+Select
+
+Requester_NAME.FULL_NAME 
+
+
+ FROM
+PO_DISTRIBUTIONS_ALL PDA
+    LEFT JOIN PO_LINE_LOCATIONS_ALL LOCATION 
+        ON PDA.PO_HEADER_ID = LOCATION.PO_HEADER_ID
+    LEFT JOIN PO_HEADERS_ALL HEADER
+        ON PDA.PO_HEADER_ID = HEADER.PO_HEADER_ID
+    left join PO_DOCUMENT_TYPES_ALL_B DOCUMENT_TYPE
+        on PDA.PRC_BU_ID = DOCUMENT_TYPE.PRC_BU_ID
+    left join (
+        select distinct
+            PERSON_ID,
+            FULL_NAME
+        from
+            PER_PERSON_NAMES_F
+        where
+            NAME_TYPE = 'US'
+    ) Requester_NAME
+        on HEADER.AGENT_ID = Requester_NAME.PERSON_ID
+----buyer
+SELECT
+BUYER_NAME.FULL_NAME
+from
+
+PO_HEADERS_ALL HEADER
+    left join PO_DOCUMENT_TYPES_ALL_B DOCUMENT_TYPE
+        on HEADER.TYPE_LOOKUP_CODE = DOCUMENT_TYPE.DOCUMENT_SUBTYPE
+    left join PO_DOC_STYLE_HEADERS DOCUMENT_STYLE
+        on HEADER.STYLE_ID = DOCUMENT_STYLE.STYLE_ID
+    left join HR_ORGANIZATION_UNITS_F_TL PROCUREMENT_BUSINESS_UNIT_TL
+        on HEADER.PRC_BU_ID = PROCUREMENT_BUSINESS_UNIT_TL.ORGANIZATION_ID
+        and PROCUREMENT_BUSINESS_UNIT_TL.LANGUAGE = 'US'
+    left join (
+        select distinct
+            PERSON_ID,
+            FULL_NAME
+        from
+            PER_PERSON_NAMES_F
+        where
+            NAME_TYPE = 'US'
+    ) BUYER_NAME
+        on HEADER.AGENT_ID = BUYER_NAME.PERSON_ID
+    left join POZ_SUPPLIERS SUPPLIER
+        on HEADER.VENDOR_ID = SUPPLIER.VENDOR_ID
+    left join HZ_PARTIES SUPPLIER_PARTY
+        on SUPPLIER.PARTY_ID = SUPPLIER_PARTY.PARTY_ID
+    left join POZ_SUPPLIER_SITES_ALL_M SUPPLIER_SITE
+        on HEADER.VENDOR_SITE_ID = SUPPLIER_SITE.VENDOR_SITE_ID
+    left join HZ_PARTIES FREIGHT_CARRIER
+        on HEADER.CARRIER_ID = FREIGHT_CARRIER.PARTY_ID
+    left join AP_TERMS_TL TERM_TL
+        on HEADER.TERMS_ID = TERM_TL.TERM_ID
+        and TERM_TL.LANGUAGE = 'US'
+    left join (
+        select
+            PO_HEADER_ID,
+            ORIGINATOR_ROLE,
+            CHANGE_ORDER_DESC
+        from
+            PO_VERSIONS
+        where
+            CO_SEQUENCE = 0
+    ) VERSION
+        on HEADER.PO_HEADER_ID = VERSION.PO_HEADER_ID
+    left join (
+        select 
+        distinct
+            PERSON_ID,
+            EMAIL_ADDRESS
+        from
+            PER_EMAIL_ADDRESSES
+    ) BUYER_EMAIL
+        on HEADER.AGENT_ID = BUYER_EMAIL.PERSON_ID
+
+
+
+
+
+
+        SHIP_TO_LOCATION_ID
+
+        LOCATION_CODE

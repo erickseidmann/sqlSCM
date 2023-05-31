@@ -1,0 +1,35 @@
+select 
+a.asset_number INTERFACE_LINE_NUMBER_D,
+A.* 
+FROM (SELECT DISTINCT
+fdh.UNITS_ASSIGNED UNITS_ASSIGNED,
+PEA.EMAIL_ADDRESS EMPLOYEE_EMAIL_ADDRESS,
+FL.SEGMENT1,
+fl.SEGMENT2,
+fl.SEGMENT3,
+fl.SEGMENT4,
+fl.SEGMENT5,
+fl.SEGMENT6,
+fl.SEGMENT7,
+gcc.segment1 EXPENSE_ACCOUNT_SEGMENT1,
+GCC.SEGMENT2 EXPENSE_ACCOUNT_SEGMENT2,
+GCC.SEGMENT3 EXPENSE_ACCOUNT_SEGMENT3,
+GCC.SEGMENT4 EXPENSE_ACCOUNT_SEGMENT4,
+GCC.SEGMENT5 EXPENSE_ACCOUNT_SEGMENT5,
+GCC.SEGMENT6 EXPENSE_ACCOUNT_SEGMENT6,
+GCC.SEGMENT7 EXPENSE_ACCOUNT_SEGMENT7,
+GCC.SEGMENT8 EXPENSE_ACCOUNT_SEGMENT8,
+fab.asset_number
+from FA_LOCATIONS FL,
+FA_DISTRIBUTION_HISTORY fdh,
+fa_additions_b fab,
+gl_code_combinations gcc,
+per_persons pp,
+PER_EMAIL_ADDRESSES pea
+where fdh.LOCATION_ID = fl.LOCATION_ID(+)
+and fdh.code_combination_id = gcc.code_combination_id
+and fdh.ASSIGNED_TO = pp.PERSON_ID(+)  
+and pea.person_id(+) = pp.person_id
+and fab.asset_id = fdh.asset_id
+order by asset_number) A
+order by interface_line_number_d
